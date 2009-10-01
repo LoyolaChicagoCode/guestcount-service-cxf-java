@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:cxf="http://cxf.apache.org/core"
+	xmlns:jaxws="http://cxf.apache.org/jaxws"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://cxf.apache.org/core http://cxf.apache.org/schemas/core.xsd 
+http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd
+http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd">
+
+	<import resource="classpath:META-INF/cxf/cxf.xml" />
+	<import resource="classpath:META-INF/cxf/cxf-extension-soap.xml" />
+	<import resource="classpath:META-INF/cxf/cxf-servlet.xml" />
+	<import resource="classpath:META-INF/cxf/cxf-extension-http.xml" />
+
+	<jaxws:endpoint id="countService"
+		implementor="#defaultCountService"
+		implementorClass="guestcount.CountService"
+		address="/CountService">
+		<jaxws:serviceFactory>
+			<ref bean="service-factory" />
+		</jaxws:serviceFactory>
+	</jaxws:endpoint>
+
+	<!-- provides logging for the cxf bus (observe the input and output logging on the consule as you access the service) -->
+	<cxf:bus>
+		<cxf:features>
+			<cxf:logging />
+		</cxf:features>
+	</cxf:bus>
+
+	<!-- Specify we want the agegis data binding...this is how wsdl's are automatically automatically created -->
+	<bean id="aegisBean"
+		class="org.apache.cxf.aegis.databinding.AegisDatabinding" />
+
+	<bean id="defaultCountService"
+		class="guestcount.Door" scope="session">
+		<aop:scoped-proxy />
+		<property name="totalCount" ref="totalCount" />
+	</bean>
+
+	<bean id="totalCount" class="guestcount.DefaultCounter" />
+
+	<bean id="service-factory"
+		class="org.apache.cxf.jaxws.support.JaxWsServiceFactoryBean">
+		<!-- our data binding is AegisDataBinding which does the magic of translating everything automatically automatically -->
+		<property name="dataBinding" ref="aegisBean" />
+		<property name="serviceConfigurations">
+			<list>
+				<bean
+					class="org.apache.cxf.jaxws.support.JaxWsServiceConfiguration" />
+				<bean
+					class="org.apache.cxf.aegis.databinding.AegisServiceConfiguration" />
+				<bean
+					class="org.apache.cxf.service.factory.DefaultServiceConfiguration" />
+			</list>
+		</property>
+	</bean>
+
+</beans>
